@@ -10,6 +10,12 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.nio.file.AccessDeniedException;
 
+/**
+ * Global exception handler for the Finance Tracker application.
+ * This class centralizes the handling of common exceptions thrown across controllers,
+ * ensuring consistent and meaningful HTTP responses for API clients.
+ * It maps specific exception types to appropriate HTTP status codes and response messages.
+ */
 @ControllerAdvice
 public class ExceptionHandlerAdvice {
 

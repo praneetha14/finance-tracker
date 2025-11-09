@@ -14,6 +14,7 @@ import lombok.Setter;
 @Setter
 public class DefaultExpenseEntity extends AbstractEntity {
 
+
     @ManyToOne
     @JoinColumn(name = "expense_type_id", nullable = false)
     private ExpenseEntity expenseType;
