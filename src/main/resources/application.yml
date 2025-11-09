@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: Finance-Tracker
+  datasource:
+    username: ${MYSQL_DATABASE_USER:root}
+    password: ${MYSQL_DATABASE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://${MYSQL_DATABASE_HOST:localhost:3306}/${MYSQL_DATABASE_NAME:finance_tracker}?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+  profiles:
+    active: local
+
+finance:
+  tracker:
+    aws:
+      access-key: ${AWS_ACCESS_KEY}
+      secret-key: ${AWS_SECRET}
+      bucket: ${BUCKET_NAME:finance-tracker-praneetha}
+      region: ${REGION:ap-south-1}
+      signed-url-expiry: ${SIGNED_URL_EXPIRY:3600}

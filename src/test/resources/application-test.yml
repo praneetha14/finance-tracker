@@ -1,0 +1,18 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:finance_tracker;MODE=MYSQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+
+finance:
+  tracker:
+    aws:
+      access-key: ${AWS_ACCESS_KEY:1234}
+      secret-key: ${AWS_SECRET:1234}
+      bucket: ${BUCKET_NAME:test}
+      region: ${REGION:test}
+      signed-url-expiry: ${SIGNED_URL_EXPIRY:1440}
