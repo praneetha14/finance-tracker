@@ -1,5 +1,7 @@
 package com.finance.tracker.web;
 
+import com.finance.tracker.exception.InvalidInputException;
+import com.finance.tracker.exception.ResourceNotFoundException;
 import com.finance.tracker.model.dto.ExpenseDTO;
 import com.finance.tracker.model.vo.ExpenseSummaryVO;
 import com.finance.tracker.model.vo.SuccessResponseVO;
@@ -46,6 +48,28 @@ public class MonthlyExpenseControllerTest {
                 .param("month", "11")
                 .param("year", "2025")
         ).andExpect(status().isOk());
+    }
+
+    @Test
+    void getMonthlyExpenseInvalidInputFailureTest() throws Exception {
+        when(monthlyExpenseService.getMonthlyExpense(anyInt(), anyInt(), any()))
+                .thenThrow(new InvalidInputException("Invalid month or year"));
+        mockMvc.perform(get(GET_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .param("month", "13")
+                .param("year", "2029")
+        ).andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getMonthlyExpenseResourceNotFoundFailureTest() throws Exception {
+        when(monthlyExpenseService.getMonthlyExpense(anyInt(), anyInt(), any()))
+                .thenThrow(new ResourceNotFoundException("No monthly expense found for given month and year"));
+        mockMvc.perform(get(GET_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .param("month", "11")
+                .param("year", "2025")
+        ).andExpect(status().isNotFound());
     }
 
     private ExpenseSummaryVO createExpenseSummaryVO() {
