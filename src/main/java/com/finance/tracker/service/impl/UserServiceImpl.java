@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
+
 /**
  * This class is the Implementation of the UserService interface that provides business logic
  * for managing user-related operations, including creation, retrieval, and updates.
@@ -67,52 +69,37 @@ public class UserServiceImpl implements UserService {
     /**
      * Retrieves a user by their unique identifier.
      *
-     * @param id the UUID of the user to be retrieved
+     * @param apiKey authorization key for secure API access.
      * @return SuccessResponseVO containing UserVO if found
-     * @throws ResourceNotFoundException if the user with the given ID does not exist
+     * @throws ResourceNotFoundException if the user with the given apiKey does not exist
      */
     @Override
-    public SuccessResponseVO<UserVO> getUserById(UUID id) {
-        UserEntity userEntity = userRepository.getUserById(id);
-        if (userEntity == null) {
-            throw new ResourceNotFoundException("User with given id " + id + " not found");
-        }
+    public SuccessResponseVO<UserVO> getCurrentlyLoggedUserByApiKey(String apiKey) {
+        UserEntity userEntity = userRepository.findByApiKey(apiKey)
+                .orElseThrow(()-> new ResourceNotFoundException("User with given apiKey " + apiKey + " not found"));
         return SuccessResponseVO.of(200, "Successfully fetched user", toVO(userEntity));
     }
 
-    /**
-     * Retrieves all users present in the system.
-     * @return SuccessResponseVO containing a list of UserVO.
-     */
-    @Override
-    public SuccessResponseVO<List<UserVO>> getAllUsers() {
-        List<UserEntity> userEntities = userRepository.findAll();
-        List<UserVO> userVOList = new ArrayList<>();
-        for (UserEntity userEntity : userEntities) {
-            userVOList.add(toVO(userEntity));
-        }
-        return SuccessResponseVO.of(200, "Successfully retrieved users", userVOList);
-    }
 
     /**
      * Updates an existing user's information.
      * Validates duplicate email and mobile before updating. Throws ResourceNotFoundException if the user doesn't exist.
      *
-     * @param id the UUID of the user to be updated
+     * @param apikey authorization key for secure API access
      * @param userDTO the updated user data
      * @return SuccessResponseVO containing the updated UserVO.
      * @throws ResourceNotFoundException if no user with the given ID exists
      * @throws DuplicateResourceException if email or mobile already exists for another user
      */
     @Override
-    public SuccessResponseVO<UserVO> updateUser(UUID id, UserDTO userDTO) {
-        UserEntity userEntity = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User with given id " + id + " not found"));
+    public SuccessResponseVO<UserVO> updateUser(String apikey, UserDTO userDTO) {
+        UserEntity userEntity = userRepository.findByApiKey(apikey)
+                .orElseThrow(() -> new ResourceNotFoundException("User with given apiKey " + apikey + " not found"));
         if (userRepository.existsByEmail(userDTO.getEmail())) {
-            throw new DuplicateResourceException("Email already exists with given email address" + userDTO.getEmail());
+            throw new DuplicateResourceException("Email already exists with given email address " + userDTO.getEmail());
         }
         if (userRepository.existsByMobile(userDTO.getMobile())) {
-            throw new DuplicateResourceException("Mobile number already exists with given mobile" + userDTO.getMobile());
+            throw new DuplicateResourceException("Mobile number already exists with given mobile " + userDTO.getMobile());
         }
         userEntity.setFirstName(userDTO.getFirstName());
         userEntity.setLastName(userDTO.getLastName());

@@ -18,7 +18,6 @@ import com.finance.tracker.service.utils.AuthenticationUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import java.nio.file.AccessDeniedException;
 import java.time.LocalDateTime;
 
 /**
@@ -41,6 +40,7 @@ public class ExpenseServiceImpl implements ExpenseService {
      * If the expense type already exists, its cost is updated.
      * Supports marking an expense as a default type for recurring months.
      * Prevents modification if a financial report for the month is already generated.
+     *
      * @param expenseDTO the expense details
      * @param isDefault  flag indicating if the expense should be stored as default
      * @param apiKey     API key for user authentication
@@ -50,22 +50,19 @@ public class ExpenseServiceImpl implements ExpenseService {
     @Override
     public SuccessResponseVO<CreateResponseVO> createExpense(ExpenseDTO expenseDTO, boolean isDefault,
                                                              String apiKey) {
-        UserEntity userEntity;
-        try {
-            userEntity = authenticationUtils.getCurrentUser(apiKey);
-        } catch (AccessDeniedException e) {
-            return SuccessResponseVO.of(401, "User not allowed. Unauthorized", null);
-        }
-        if (financeReportGenerated(userEntity, expenseDTO.getMonth())) {
-            return SuccessResponseVO.of(400, "Financial report already generated for this month. Could not add expense", null);
-        }
+        UserEntity userEntity = authenticationUtils.getCurrentUser(apiKey);
         ExpenseEntity expenseEntity = expenseRepository.findByExpenseTypeName(expenseDTO.getExpenseTypeName());
-        MonthlyExpenseEntity existingExpense = monthlyExpenseRepository.findByUserAndExpenseAndMonth(userEntity,
-                expenseEntity, MonthEnum.fromNumber(expenseDTO.getMonth()));
+        if (expenseEntity == null) {
+            expenseEntity = new ExpenseEntity();
+            expenseEntity.setExpenseTypeName(expenseDTO.getExpenseTypeName());
+            expenseEntity = expenseRepository.save(expenseEntity);
+        }
         boolean defaultExpenseEntity = defaultExpenseRepository.findByUserAndExpenseType(userEntity, expenseEntity).isPresent();
         if (defaultExpenseEntity) {
             throw new DuplicateResourceException("Default expense already exists");
         }
+        MonthlyExpenseEntity existingExpense = monthlyExpenseRepository.findByUserAndExpenseAndMonth(userEntity,
+                expenseEntity, MonthEnum.fromNumber(expenseDTO.getMonth()));
         if (existingExpense != null) {
             existingExpense.setCost(expenseDTO.getCost());
             monthlyExpenseRepository.save(existingExpense);
@@ -73,9 +70,6 @@ public class ExpenseServiceImpl implements ExpenseService {
             return SuccessResponseVO.of(200, "Updated cost for existing expense type" + expenseDTO.getExpenseTypeName()
                     + " for" + expenseDTO.getMonth(), createResponse);
         }
-        expenseEntity = new ExpenseEntity();
-        expenseEntity.setExpenseTypeName(expenseDTO.getExpenseTypeName());
-        expenseEntity = expenseRepository.save(expenseEntity);
         CreateResponseVO createResponseVO = new CreateResponseVO(expenseEntity.getId());
         if (isDefault) {
             createDefaultExpense(userEntity, expenseEntity, expenseDTO);
@@ -96,12 +90,7 @@ public class ExpenseServiceImpl implements ExpenseService {
      */
     @Override
     public SuccessResponseVO<CreateResponseVO> updateDefaultExpense(String expenseName, double newAmount, String apiKey) {
-        UserEntity userEntity;
-        try {
-            userEntity = authenticationUtils.getCurrentUser(apiKey);
-        } catch (AccessDeniedException e) {
-            return SuccessResponseVO.of(401, "User not allowed. Unauthorized", null);
-        }
+        UserEntity userEntity = authenticationUtils.getCurrentUser(apiKey);
         ExpenseEntity existingExpense = expenseRepository.findByExpenseTypeName(expenseName);
         DefaultExpenseEntity defaultExpenseEntity = defaultExpenseRepository.findByUserAndExpenseType(userEntity,
                 existingExpense).orElseThrow(() -> new ResourceNotFoundException("Default expense does not exist"));
@@ -144,13 +133,9 @@ public class ExpenseServiceImpl implements ExpenseService {
         monthlyExpenseEntity.setExpense(entity);
         monthlyExpenseEntity.setCost(expenseDTO.getCost());
         monthlyExpenseEntity.setMonth(MonthEnum.fromNumber(expenseDTO.getMonth()));
-        monthlyExpenseEntity.setYear(LocalDateTime.now().getYear());
+        monthlyExpenseEntity.setFinancialYear(LocalDateTime.now().getYear());
         monthlyExpenseRepository.save(monthlyExpenseEntity);
     }
 
-    private boolean financeReportGenerated(UserEntity userEntity, int month) {
-        return monthlyExpenseRepository.existsByUserAndMonthAndYear(userEntity, MonthEnum.fromNumber(month),
-                LocalDateTime.now().getYear());
-    }
 }
 

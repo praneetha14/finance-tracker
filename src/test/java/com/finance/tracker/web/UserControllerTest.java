@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -34,9 +35,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class UserControllerTest extends BaseControllerTest {
     private static final String BASE_URL = "/api/v1/users";
     private static final String CREATE_URL = BASE_URL + "/create";
-    private static final String GET_URL = BASE_URL + "/get/";
-    private static final String GET_ALL_URL = BASE_URL + "/getAllUsers";
-    private static final String UPDATE_URL = BASE_URL + "/update/";
+    private static final String GET_URL = BASE_URL + "/get";
+    private static final String UPDATE_URL = BASE_URL + "/update";
 
     @MockBean
     private UserService userService;
@@ -70,62 +70,61 @@ public class UserControllerTest extends BaseControllerTest {
     }
 
     @Test
-    void getUserByIdSuccessTest() throws Exception {
-        UUID id = UUID.randomUUID();
-        UserVO userVO = new UserVO(id, "John", "Doe", "john@gmail.com", "9876543210", 50000.0);
-        when(userService.getUserById(any(UUID.class)))
+    void getCurrentlyLoggedUserByApiKeySuccessTest() throws Exception {
+        UserVO userVO = new UserVO(UUID.randomUUID(),
+                "John", "Doe", "john@email.com", "9087651109", 140000);
+        when(userService.getCurrentlyLoggedUserByApiKey(anyString()))
                 .thenReturn(SuccessResponseVO.of(200, "Successfully fetched user", userVO));
-
-        mockMvc.perform(get(GET_URL + id))
-                .andExpect(status().isOk());
+        mockMvc.perform(get(GET_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("authorization", "apiKey123")
+        ).andExpect(status().isOk());
     }
 
     @Test
-    void getUserByIdNotFoundFailureTest() throws Exception {
-        when(userService.getUserById(any(UUID.class)))
-                .thenThrow(new ResourceNotFoundException("User with given id" + UUID.randomUUID() + " notfound"));
-
-        mockMvc.perform(get(GET_URL + UUID.randomUUID()))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void getAllUsersSuccessTest() throws Exception {
-        List<UserVO> users = List.of(
-                new UserVO(UUID.randomUUID(), "John", "Doe", "john@gmail.com", "9876543210", 50000.0),
-                new UserVO(UUID.randomUUID(), "Jane", "Smith", "jane@email.com", "9123456789", 60000.0)
-        );
-        when(userService.getAllUsers())
-                .thenReturn(SuccessResponseVO.of(200, "Successfully retrieved users", users));
-
-        mockMvc.perform(get(GET_ALL_URL))
-                .andExpect(status().isOk());
+    void getCurrentlyLoggedUserByApiKeyNotFoundFailureTest() throws Exception {
+        when(userService.getCurrentlyLoggedUserByApiKey(anyString()))
+                .thenThrow(new ResourceNotFoundException("User not found with the given apiKey"));
+        mockMvc.perform(get(GET_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("authorization", "hapiKey123")
+        ).andExpect(status().isNotFound());
     }
 
     @Test
     void updateUserSuccessTest() throws Exception {
-        UUID id = UUID.randomUUID();
         UserDTO userDTO = createUserDTO();
-        UserVO updatedUser = new UserVO(id, "Updated", "User", "updated@gmail.com", "9999999999", 75000.0);
-        when(userService.updateUser(any(UUID.class), any(UserDTO.class)))
-                .thenReturn(SuccessResponseVO.of(200, "User updated successfully", updatedUser));
-
-        mockMvc.perform(put(UPDATE_URL + id)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(userDTO)))
-                .andExpect(status().isOk());
+        UserVO updatedUserVO = new UserVO(UUID.randomUUID(), "Lila", "Singh",
+                "leelas@gmail.com", "9877661189", 140000);
+        when(userService.updateUser(anyString(), any(UserDTO.class)))
+                .thenReturn(SuccessResponseVO.of(201, "User updated successfully", updatedUserVO));
+        mockMvc.perform(put(UPDATE_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userDTO))
+                .header("authorization", "apiKey563")
+        ).andExpect(status().isOk());
     }
 
     @Test
-    void updateUserBadRequestFailureTest() throws Exception {
-        UUID id = UUID.randomUUID();
-        when(userService.updateUser(any(UUID.class), any(UserDTO.class)))
+    void updateUserInvalidInputFailureTest() throws Exception {
+        when(userService.updateUser(anyString(), any(UserDTO.class)))
                 .thenThrow(new InvalidInputException("Invalid input data"));
+        mockMvc.perform(put(UPDATE_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}")
+                .header("authorization", "apiKey563")
+        ).andExpect(status().isBadRequest());
+    }
 
-        mockMvc.perform(put(UPDATE_URL + id)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{}"))
-                .andExpect(status().isBadRequest());
+    @Test
+    void updateUserNotFoundFailureTest() throws Exception {
+        when(userService.updateUser(anyString(), any(UserDTO.class)))
+                .thenThrow(new ResourceNotFoundException("User not found with the given apiKey"));
+        mockMvc.perform(put(UPDATE_URL)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{}")
+                .header("authorization", "h2apiKey")
+        ).andExpect(status().isNotFound());
     }
 
     private UserDTO createUserDTO() {

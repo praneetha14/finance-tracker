@@ -42,15 +42,11 @@ public class MonthlyExpenseServiceImpl implements MonthlyExpenseService {
      */
     @Override
     public SuccessResponseVO<ExpenseSummaryVO> getMonthlyExpense(int month, int year, String apiKey) {
-        UserEntity userEntity;
+        UserEntity userEntity = authenticationUtils.getCurrentUser(apiKey);
         MonthEnum monthEnum = MonthEnum.fromNumber(month);
-        try {
-            userEntity = authenticationUtils.getCurrentUser(apiKey);
-        } catch (AccessDeniedException e) {
-            return SuccessResponseVO.of(401, "User not allowed. Unauthorized", null);
-        }
+
         List<DefaultExpenseEntity> defaultExpenses = defaultExpenseRepository.findByUser(userEntity);
-        List<MonthlyExpenseEntity> monthlyExpenses = monthlyExpenseRepository.findByUserAndMonthAndYear(userEntity, monthEnum, year);
+        List<MonthlyExpenseEntity> monthlyExpenses = monthlyExpenseRepository.findByUserAndMonthAndFinancialYear(userEntity, monthEnum, year);
         List<ExpenseDTO> defaultExpenseDTOs = defaultExpenses.stream()
                 .map(exp -> new ExpenseDTO(
                         exp.getExpenseType().getExpenseTypeName(),

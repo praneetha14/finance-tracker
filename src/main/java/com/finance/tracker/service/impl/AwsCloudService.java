@@ -70,9 +70,9 @@ public class AwsCloudService implements CloudService {
             // Generate a pre-signed URL for secure access
             return generatePreSignedUrl(fileName);
 
-        } catch (S3Exception e) {
+        } catch (Exception e) {
             System.out.println(e.getMessage());
-            throw new RuntimeException("Error uploading file to S3: " + e.awsErrorDetails().errorMessage(), e);
+            throw new RuntimeException("Error uploading file to S3: " + e.getMessage(), e);
         }
     }
 

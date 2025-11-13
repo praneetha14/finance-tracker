@@ -10,7 +10,6 @@ import java.util.UUID;
 
 public interface UserService {
     SuccessResponseVO<CreateUserVO> createUser(UserDTO userDTO);
-    SuccessResponseVO<UserVO> getUserById(UUID id);
-    SuccessResponseVO<UserVO> updateUser(UUID id, UserDTO userDTO);
-    SuccessResponseVO<List<UserVO>> getAllUsers();
+    SuccessResponseVO<UserVO> getCurrentlyLoggedUserByApiKey(String apiKey);
+    SuccessResponseVO<UserVO> updateUser(String apiKey, UserDTO userDTO);
 }

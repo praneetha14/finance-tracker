@@ -10,4 +10,5 @@ import java.util.UUID;
 
 public interface ExpenseReportRepository extends JpaRepository<ExpenseReportEntity, UUID> {
     Optional<ExpenseReportEntity> findByUserAndMonth(UserEntity user, MonthEnum month);
+    Optional<ExpenseReportEntity> findByUserAndMonthAndFinancialYear(UserEntity user, MonthEnum month, int year);
 }

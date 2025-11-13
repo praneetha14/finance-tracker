@@ -18,11 +18,11 @@ import lombok.Setter;
 public class MonthlyExpenseEntity extends AbstractEntity {
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "month")
+    @Column(name = "month_name")
     private MonthEnum month;
 
-    @Column(name = "year")
-    private Integer year;
+    @Column(name = "financial_year")
+    private Integer financialYear;
 
     @Column(name = "cost")
     private double cost;

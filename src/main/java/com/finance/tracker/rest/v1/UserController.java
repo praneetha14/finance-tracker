@@ -13,11 +13,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import java.util.UUID;
+
+import static org.springframework.data.jpa.domain.AbstractPersistable_.id;
 
 /**
  * UserController class handles all user-related operations in the Finance Tracker application.
@@ -46,31 +50,23 @@ public class UserController {
 
     /**
      * Retrieves user information by user ID.
-     * @param id is the UUID of the user to retrieve.
+     * @param apiKey authorization key for secure API access.
      * @return a ResponseEntity containing SuccessResponseVO with user details.
      */
-    @GetMapping("/get/{id}")
-    public ResponseEntity<SuccessResponseVO<UserVO>> getUserById(@PathVariable UUID id) {
-        return ResponseEntity.ok(userService.getUserById(id));
+    @GetMapping("/get")
+    public ResponseEntity<SuccessResponseVO<UserVO>> getCurrentlyLoggedUserByApiKey(@RequestHeader(value = "Authorization", required = false) String apiKey) {
+        return ResponseEntity.ok(userService.getCurrentlyLoggedUserByApiKey(apiKey));
     }
 
-    /**
-     * Retrieves a list of all users present in the system.
-     * @return a ResponseEntity containing SuccessResponseVO with a list of UserVO.
-     */
-    @GetMapping("/getAllUsers")
-    public ResponseEntity<SuccessResponseVO<List<UserVO>>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
-    }
 
     /**
      * Updates an existing user's details.
-     * @param id is the UUID of the user to update.
+     * @param apiKey authorization key for secure API access.
      * @param userDTO is the UserDTO containing updated user details.
      * @return a ResponseEntity containing  SuccessResponseVO with updated user information.
      */
-    @PutMapping("/update/{id}")
-    public ResponseEntity<SuccessResponseVO<UserVO>> updateUser(@PathVariable UUID id, @RequestBody UserDTO userDTO) {
-        return ResponseEntity.ok(userService.updateUser(id, userDTO));
+    @PutMapping("/update")
+    public ResponseEntity<SuccessResponseVO<UserVO>> updateUser(@RequestHeader(value = "Authorization", required = false) String apiKey, @RequestBody UserDTO userDTO) {
+        return ResponseEntity.ok(userService.updateUser(apiKey, userDTO));
     }
 }

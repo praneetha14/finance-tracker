@@ -4,6 +4,7 @@ import com.finance.tracker.entity.DefaultExpenseEntity;
 import com.finance.tracker.entity.ExpenseReportEntity;
 import com.finance.tracker.entity.MonthlyExpenseEntity;
 import com.finance.tracker.entity.UserEntity;
+import com.finance.tracker.exception.DuplicateResourceException;
 import com.finance.tracker.exception.InvalidInputException;
 import com.finance.tracker.exception.ResourceNotFoundException;
 import com.finance.tracker.model.dto.MonthlyExpenseReportModel;
@@ -22,6 +23,7 @@ import com.finance.tracker.service.utils.AuthenticationUtils;
 import lombok.RequiredArgsConstructor;
 
 import java.nio.file.AccessDeniedException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -66,13 +68,8 @@ public class ExpenseReportServiceImpl implements ExpenseReportService {
      */
     @Override
     public SuccessResponseVO<FinancesVO> submitFinances(SavingsDTO savingsDTO, String apiKey) {
-        UserEntity userEntity;
+        UserEntity userEntity = authenticationUtils.getCurrentUser(apiKey);
         MonthEnum monthEnum = MonthEnum.fromNumber(savingsDTO.getMonth());
-        try {
-            userEntity = authenticationUtils.getCurrentUser(apiKey);
-        } catch (AccessDeniedException e) {
-            return SuccessResponseVO.of(401, "User not allowed. Unauthorized", null);
-        }
         double salary = userEntity.getSalary();
         double expectedSavings = savingsDTO.getExpectedSavings();
         if (expectedSavings > salary) {
@@ -88,6 +85,7 @@ public class ExpenseReportServiceImpl implements ExpenseReportService {
         expenseReportEntity.setMonth(monthEnum);
         expenseReportEntity.setEstimatedSavings(savingsDTO.getExpectedSavings());
         expenseReportEntity.setExpectedExpenses(expectedExpenses);
+        expenseReportEntity.setFinancialYear(LocalDateTime.now().getYear());
         expenseReportRepository.save(expenseReportEntity);
         double remainingAmountToUse = userEntity.getSalary() - expectedExpenses
                 - expenseReportEntity.getEstimatedSavings();
@@ -110,12 +108,9 @@ public class ExpenseReportServiceImpl implements ExpenseReportService {
      */
     @Override
     public SuccessResponseVO<FileReportVO> getExpenseReport(int month, int year, String apiKey) {
-        UserEntity userEntity;
-
-        try {
-            userEntity = authenticationUtils.getCurrentUser(apiKey);
-        } catch (AccessDeniedException e) {
-            return SuccessResponseVO.of(401, "User not allowed. Unauthorized", null);
+        UserEntity userEntity = authenticationUtils.getCurrentUser(apiKey);
+        if(financeReportGenerated(userEntity, month)){
+            throw new DuplicateResourceException("Finance report for this month has already been generated");
         }
         Optional<ExpenseReportEntity> expenseReportEntity = expenseReportRepository.findByUserAndMonth(userEntity,
                 MonthEnum.fromNumber(month));
@@ -128,8 +123,8 @@ public class ExpenseReportServiceImpl implements ExpenseReportService {
         MonthEnum currentMonthEnum = MonthEnum.fromNumber(month);
         MonthEnum previousMonthEnum = MonthEnum.fromNumber(month == 1 ? 12 : month - 1);
         int previousYear = (month == 1 ? year - 1 : year);
-        List<MonthlyExpenseEntity> currentMonthlyExpenses = monthlyExpenseRepository.findByUserAndMonthAndYear(userEntity, currentMonthEnum, year);
-        List<MonthlyExpenseEntity> previousMonthlyExpenses = monthlyExpenseRepository.findByUserAndMonthAndYear(userEntity, previousMonthEnum, previousYear);
+        List<MonthlyExpenseEntity> currentMonthlyExpenses = monthlyExpenseRepository.findByUserAndMonthAndFinancialYear(userEntity, currentMonthEnum, year);
+        List<MonthlyExpenseEntity> previousMonthlyExpenses = monthlyExpenseRepository.findByUserAndMonthAndFinancialYear(userEntity, previousMonthEnum, previousYear);
         if (currentMonthlyExpenses.isEmpty()) {
             throw new ResourceNotFoundException("No monthly expenses found for this month");
         }
@@ -208,7 +203,7 @@ public class ExpenseReportServiceImpl implements ExpenseReportService {
         ExpenseReportEntity reportEntity = new ExpenseReportEntity();
         reportEntity.setUser(userEntity);
         reportEntity.setMonth(currentMonthEnum);
-        reportEntity.setYear(year);
+        reportEntity.setFinancialYear(year);
         reportEntity.setFileKey(fileName);
         reportEntity.setTotalExpense(totalActualExpenses);
         reportEntity.setTotalSaving(totalActualSavings);
@@ -217,6 +212,12 @@ public class ExpenseReportServiceImpl implements ExpenseReportService {
         expenseReportRepository.save(reportEntity);
         return SuccessResponseVO.of(200, "Expense report generated successfully",
                 new FileReportVO(preSignedUrl));
+    }
+
+    private boolean financeReportGenerated(UserEntity userEntity, int month) {
+        Optional<ExpenseReportEntity> reportEntity = expenseReportRepository.findByUserAndMonthAndFinancialYear(userEntity, MonthEnum.fromNumber(month),
+                LocalDateTime.now().getYear());
+        return reportEntity.filter(expenseReportEntity -> expenseReportEntity.getFileKey() != null).isPresent();
     }
 
     private double calculatePercentageChange(double previous, double current) {

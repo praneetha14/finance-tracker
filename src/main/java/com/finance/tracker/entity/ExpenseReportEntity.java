@@ -23,11 +23,11 @@ public class ExpenseReportEntity extends AbstractEntity {
     private UserEntity user;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "month", nullable = false)
+    @Column(name = "month_name", nullable = false)
     private MonthEnum month;
 
-    @Column(name = "year", nullable = false)
-    private Integer year;
+    @Column(name = "financial_year", nullable = false)
+    private Integer financialYear;
 
     @Column(name = "file_key", unique = true)
     private String fileKey;

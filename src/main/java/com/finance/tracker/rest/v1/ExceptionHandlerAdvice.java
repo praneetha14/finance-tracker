@@ -3,6 +3,7 @@ package com.finance.tracker.rest.v1;
 import com.finance.tracker.exception.InvalidInputException;
 import com.finance.tracker.exception.DuplicateResourceException;
 import com.finance.tracker.exception.ResourceNotFoundException;
+import com.finance.tracker.exception.UserUnauthorizedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -32,6 +33,11 @@ public class ExceptionHandlerAdvice {
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<String> handleAccessDeniedException(AccessDeniedException ex){
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.FORBIDDEN);
+    }
+
+    @ExceptionHandler(UserUnauthorizedException.class)
+    public ResponseEntity<String> handleUserUnauthorizedException(UserUnauthorizedException ex){
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNAUTHORIZED);
     }
 
     @ExceptionHandler(ResourceNotFoundException.class)

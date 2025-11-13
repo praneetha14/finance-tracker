@@ -11,9 +11,9 @@ import java.util.UUID;
 
 public interface MonthlyExpenseRepository extends JpaRepository<MonthlyExpenseEntity, UUID> {
     List<MonthlyExpenseEntity> findByUserAndMonth(UserEntity user, MonthEnum month);
-    List<MonthlyExpenseEntity> findByUserAndMonthAndYear(UserEntity user, MonthEnum month, int year);
+    List<MonthlyExpenseEntity> findByUserAndMonthAndFinancialYear(UserEntity user, MonthEnum month, int year);
     MonthlyExpenseEntity findByUserAndExpenseAndMonth(UserEntity user, ExpenseEntity expenseEntity, MonthEnum monthEnum);
-    boolean existsByUserAndMonthAndYear(UserEntity user, MonthEnum month, int year);
+    boolean existsByUserAndMonthAndFinancialYear(UserEntity user, MonthEnum month, int year);
 
     UserEntity user(UserEntity user);
 }
