@@ -17,10 +17,12 @@
         <p><strong>Total Expected Expenses:</strong> ₹${totalExpectedExpenses}</p>
         <p><strong>Total Default Expenses:</strong> ₹${totalDefaultExpenses}</p>
         <p><strong>Actual Expenses:</strong> ₹${actualExpenses}</p>
-        <p><strong>Expense Change (%):</strong> ${percentageChange}%</p>
+        <p><strong>Expense Change from previous month(%):</strong> ${percentageChange}%</p>
         <p><strong>Expected Savings:</strong> ₹${totalExpectedSavings}</p>
         <p><strong>Actual Savings:</strong> ₹${actualSavings}</p>
-        <p><strong>Savings Change (%):</strong> ${percentageChangeSavings}%</p>
+        <p><strong>Savings Change from previous month (%):</strong> ${percentageChangeSavings}%</p>
+        <p><strong>Previous Month Expenses:</strong> ₹${previousMonthExpenses}</p>
+        <p><strong>Previous Month Savings:</strong> ₹${previousMonthSavings}</p>
     </div>
     <h3 style="margin-top: 30px; color: #1f618d;">Expense Breakdown</h3>
     <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px;">
@@ -30,7 +32,7 @@
             <th style="border: 1px solid #ccc; padding: 8px; text-align: right;">Expected Cost</th>
             <th style="border: 1px solid #ccc; padding: 8px; text-align: center;">Is Default</th>
             <th style="border: 1px solid #ccc; padding: 8px; text-align: right;">Actual Cost</th>
-            <th style="border: 1px solid #ccc; padding: 8px; text-align: right;">Change (Current Month %)</th>
+            <th style="border: 1px solid #ccc; padding: 8px; text-align: right;">Change from expected to actual expense(Current Month %)</th>
             <th style="border: 1px solid #ccc; padding: 8px; text-align: right;">Previous Month Cost</th>
             <th style="border: 1px solid #ccc; padding: 8px; text-align: right;">Change From Previous Month (%)</th>
         </tr>

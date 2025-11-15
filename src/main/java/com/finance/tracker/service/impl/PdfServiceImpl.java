@@ -50,7 +50,9 @@ public class PdfServiceImpl implements PdfService {
             model.put("salary", reportModel.getSalary());
             model.put("mobile", reportModel.getMobile());
             model.put("month", reportModel.getMonth());
-            model.put("year", reportModel.getYear());
+            model.put("year", String.valueOf(reportModel.getYear()));
+            model.put("previousMonthExpenses", reportModel.getPreviousMonthExpenses());
+            model.put("previousMonthSavings", reportModel.getPreviousMonthSavings());
             model.put("totalDefaultExpenses", reportModel.getTotalDefaultExpenses());
             model.put("actualExpenses", reportModel.getActualExpenses());
             model.put("percentageChange", reportModel.getPercentageChange());

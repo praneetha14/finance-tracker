@@ -112,8 +112,8 @@ public class ExpenseReportServiceImpl implements ExpenseReportService {
         if(financeReportGenerated(userEntity, month)){
             throw new DuplicateResourceException("Finance report for this month has already been generated");
         }
-        Optional<ExpenseReportEntity> expenseReportEntity = expenseReportRepository.findByUserAndMonth(userEntity,
-                MonthEnum.fromNumber(month));
+        Optional<ExpenseReportEntity> expenseReportEntity = expenseReportRepository.findByUserAndMonthAndFinancialYear(userEntity,
+                MonthEnum.fromNumber(month), year);
         if (expenseReportEntity.isPresent()) {
             ExpenseReportEntity reportEntity = expenseReportEntity.get();
             return SuccessResponseVO.of(200, "Finance report generated successfully",
@@ -145,12 +145,17 @@ public class ExpenseReportServiceImpl implements ExpenseReportService {
         double totalActualSavings = currentMonthSalary - totalActualExpenses;
         double previousMonthExpenses = previousMonthlyExpenses.stream()
                 .mapToDouble(MonthlyExpenseEntity::getCost).sum();
-        double previousMonthSalary = expenseReportRepository.findByUserAndMonth(userEntity, previousMonthEnum)
+        double previousMonthSalary = expenseReportRepository.findByUserAndMonthAndFinancialYear(userEntity, previousMonthEnum, previousYear)
                 .map(report -> report.getUser().getSalary())
                 .orElse(userEntity.getSalary());
-        double previousMonthSavings = previousMonthSalary - previousMonthExpenses;
-        double expensePercentageChange = calculatePercentageChange(previousMonthExpenses, totalActualExpenses);
-        double savingPercentageChange = calculatePercentageChange(totalExpectedSavings, totalActualSavings);
+        double previousMonthSavings;
+        if(previousMonthExpenses == 0){
+            previousMonthSavings = 0;
+        } else{
+            previousMonthSavings = previousMonthSalary - previousMonthExpenses;
+        }
+        double expensePercentageChange = calculatePercentageChange(previousMonthExpenses,totalActualExpenses);
+        double savingPercentageChange = calculatePercentageChange(previousMonthSavings, totalActualSavings);
 
         Map<String, Double> prevExpenseMap = previousMonthlyExpenses.stream()
                 .collect(Collectors.toMap(
@@ -158,20 +163,29 @@ public class ExpenseReportServiceImpl implements ExpenseReportService {
                         MonthlyExpenseEntity::getCost,
                         (oldValue, newValue) -> newValue
                 ));
+        Map<String, Double> expectedExpenseMap = defaultExpenses.stream()
+                .collect(Collectors.toMap(
+                        d -> d.getExpenseType().getExpenseTypeName(),
+                        DefaultExpenseEntity::getAmount,
+                        (oldVal, newVal) -> newVal
+                ));
         List<MonthlyExpenseReportModel.ExpenseItem> expenseItems = currentMonthlyExpenses.stream()
                 .map(exp -> {
                     String expenseName = exp.getExpense().getExpenseTypeName();
+                    double actualCost = exp.getCost();
+                    double expectedCost = expectedExpenseMap.getOrDefault(expenseName, 0.0);
                     double prevCost = prevExpenseMap.getOrDefault(expenseName, 0.0);
-                    double changeFromPrev = calculatePercentageChange(prevCost, exp.getCost());
+                    double changeFromPrev = calculatePercentageChange(prevCost, actualCost);
+                    double currentMonthChange = calculatePercentageChange(expectedCost, actualCost);
                     boolean isDefaultExpense = defaultExpenseTypeNames.contains(expenseName);
                     return MonthlyExpenseReportModel.ExpenseItem.builder()
                             .expenseName(expenseName)
-                            .expectedCost(isDefaultExpense ? exp.getCost() : 0.0)
+                            .expectedCost(expectedCost)
                             .actualCost(exp.getCost())
                             .isDefault(String.valueOf(isDefaultExpense))
                             .previousMonthCost(prevCost)
                             .percentageChangeFromPreviousMonth(changeFromPrev)
-                            .percentageChangeForCurrentMonth(0.0)
+                            .percentageChangeForCurrentMonth(currentMonthChange)
                             .build();
                 }).collect(Collectors.toList());
 
@@ -191,6 +205,8 @@ public class ExpenseReportServiceImpl implements ExpenseReportService {
                 .totalExpectedSavings(totalExpectedSavings)
                 .actualSavings(totalActualSavings)
                 .percentageChangeSavings(savingPercentageChange)
+                .previousMonthExpenses(previousMonthExpenses)
+                .previousMonthSavings(previousMonthSavings)
                 .expenseItems(expenseItems)
                 .build();
         // Calling PDF + AWS service (Generating pdf & upload to s3 bucket)
@@ -222,7 +238,11 @@ public class ExpenseReportServiceImpl implements ExpenseReportService {
 
     private double calculatePercentageChange(double previous, double current) {
         if (previous == 0) {
-            return 100;
+            if(current == 0) {
+                return 0;
+            } else{
+                return 100;
+            }
         } else {
             return ((current - previous) / previous) * 100;
         }

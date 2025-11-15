@@ -67,8 +67,8 @@ public class ExpenseServiceImpl implements ExpenseService {
             existingExpense.setCost(expenseDTO.getCost());
             monthlyExpenseRepository.save(existingExpense);
             CreateResponseVO createResponse = new CreateResponseVO(existingExpense.getId());
-            return SuccessResponseVO.of(200, "Updated cost for existing expense type" + expenseDTO.getExpenseTypeName()
-                    + " for" + expenseDTO.getMonth(), createResponse);
+            return SuccessResponseVO.of(200, "Updated cost for existing expense type " + expenseDTO.getExpenseTypeName()
+                    + " for " + expenseDTO.getMonth(), createResponse);
         }
         CreateResponseVO createResponseVO = new CreateResponseVO(expenseEntity.getId());
         if (isDefault) {

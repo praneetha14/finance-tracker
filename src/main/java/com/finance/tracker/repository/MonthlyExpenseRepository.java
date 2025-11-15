@@ -13,7 +13,5 @@ public interface MonthlyExpenseRepository extends JpaRepository<MonthlyExpenseEn
     List<MonthlyExpenseEntity> findByUserAndMonth(UserEntity user, MonthEnum month);
     List<MonthlyExpenseEntity> findByUserAndMonthAndFinancialYear(UserEntity user, MonthEnum month, int year);
     MonthlyExpenseEntity findByUserAndExpenseAndMonth(UserEntity user, ExpenseEntity expenseEntity, MonthEnum monthEnum);
-    boolean existsByUserAndMonthAndFinancialYear(UserEntity user, MonthEnum month, int year);
-
     UserEntity user(UserEntity user);
 }

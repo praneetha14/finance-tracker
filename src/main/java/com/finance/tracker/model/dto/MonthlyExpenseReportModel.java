@@ -20,6 +20,8 @@ public class MonthlyExpenseReportModel {
     private double salary;
     private int month;
     private int year;
+    private double previousMonthExpenses;
+    private double previousMonthSavings;
     private double totalExpectedExpenses;
     private double totalDefaultExpenses;
     private double actualExpenses;
