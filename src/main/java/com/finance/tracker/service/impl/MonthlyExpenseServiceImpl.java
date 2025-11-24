@@ -44,7 +44,6 @@ public class MonthlyExpenseServiceImpl implements MonthlyExpenseService {
     public SuccessResponseVO<ExpenseSummaryVO> getMonthlyExpense(int month, int year, String apiKey) {
         UserEntity userEntity = authenticationUtils.getCurrentUser(apiKey);
         MonthEnum monthEnum = MonthEnum.fromNumber(month);
-
         List<DefaultExpenseEntity> defaultExpenses = defaultExpenseRepository.findByUser(userEntity);
         List<MonthlyExpenseEntity> monthlyExpenses = monthlyExpenseRepository.findByUserAndMonthAndFinancialYear(userEntity, monthEnum, year);
         List<ExpenseDTO> defaultExpenseDTOs = defaultExpenses.stream()
